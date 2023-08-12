@@ -43,10 +43,7 @@ class OptList(list):
 
     def get_optarg(self, opt):
         """ Return the OptArg corresponding to opt. """
-        for optarg in self:
-            if optarg.opt == opt:
-                return optarg
-        return None
+        return next((optarg for optarg in self if optarg.opt == opt), None)
 
     def get_opts(self):
         """ Return a list of every --opt. """
@@ -66,10 +63,7 @@ class OptList(list):
 
     def index_of_opt(self, opt):
         """ Return the index of opt, or None. """
-        for i, optarg in enumerate(self):
-            if optarg.opt == opt:
-                return i
-        return None
+        return next((i for i, optarg in enumerate(self) if optarg.opt == opt), None)
 
     def set_only_modes(self, modes):
         """ Set the previous option to only refer to the given modes. """
@@ -122,10 +116,10 @@ class Descriptions:
             if len(sl) == 2:
                 option = sl[0]
             elif sl[2].startswith("DUP"):
-                option = "dup%s" % sl[2][3:]
+                option = f"dup{sl[2][3:]}"
             else:
                 assert sl[2] == "MODE"
-                option = "mode%s" % sl[0]
+                option = f"mode{sl[0]}"
 
         except Exception as err:
             print("Problem on line:\n%s\n" % line)
@@ -133,7 +127,7 @@ class Descriptions:
 
         # Sanity check for an option being given twice.
         if option in self.desc:
-            raise Exception("Already have: %s" % option)
+            raise Exception(f"Already have: {option}")
 
         # Save the argument and description.
         self.desc[option] = desc.rstrip()
@@ -144,11 +138,11 @@ class Descriptions:
             desc = self.desc[option]
         else:
             # Check if it's a mode as well
-            modestr = "mode%s" % option
+            modestr = f"mode{option}"
             if modestr in self.desc:
                 desc = self.desc[modestr]
             else:
-                print("missing description for %s" % option)
+                print(f"missing description for {option}")
                 return "(missing)"
 
         # Record that we've checked this option, and return the description.
@@ -162,7 +156,7 @@ class Descriptions:
                 # Don't warn about "mode" or "duplicate" descriptions.
                 if option.startswith("mode") or option.startswith("dup"):
                     continue
-                print("extra argument: %s" % option)
+                print(f"extra argument: {option}")
 
         # Check "duplicate" descriptions
         for option, desc in self.desc.items():
@@ -197,16 +191,13 @@ def sort_tarsnap_opts(two, one):
     # Sort (ignoring capitalization).
     if a < b:
         return 1
-    if a < b:
-        return -1
-
     # It's a tie (such as -H, h), so now use capitalization.
     if one < two:
         return 1
     if one > two:
         return -1
 
-    raise Exception("Something weird happened: %s" % one)
+    raise Exception(f"Something weird happened: {one}")
 
 
 def check_sorted(optlist):
@@ -230,13 +221,9 @@ def parse_opt_arg(line):
     """ Parse a line to produce the option and argument. """
     sl = line.split()[2:]
     # Get the option.
-    opt = "-%s" % sl[0]
+    opt = f"-{sl[0]}"
     # Get the argument (if applicable).
-    if len(sl) > 1:
-        # If we have an arg, assume it has enough parts.
-        arg = sl[2]
-    else:
-        arg = None
+    arg = sl[2] if len(sl) > 1 else None
     return opt, arg
 
 
@@ -252,7 +239,7 @@ def parse_modes_only(line):
 
     # Check that the "mode(s) only" fits onto one line.
     if not line.endswith("only)\n"):
-        print("man error: %s" % (line))
+        print(f"man error: {line}")
         exit(1)
 
     # Strip the initial '(' and the ending.
@@ -305,8 +292,7 @@ def get_sections_options(filename_manpage, descs):
 
         if getmodes:
             getmodes = False
-            modes = parse_modes_only(line)
-            if modes:
+            if modes := parse_modes_only(line):
                 sections[section].set_only_modes(modes)
 
     return sections
@@ -325,15 +311,15 @@ def get_options(filename_manpage, descs):
     for optarg in sections["options"]:
         for mode in optarg.modes:
             if mode not in modes:
-                print("Unrecognized mode: %s" % (optarg))
+                print(f"Unrecognized mode: {optarg}")
                 exit(1)
 
-    options = {}
-    options["modes"] = modes
-
-    # Options which require an argument.
-    options["filenameargs"] = sections["options"].get_opts_with_func_arg(
-        lambda x: x in ["filename", "key-file"])
+    options = {
+        "modes": modes,
+        "filenameargs": sections["options"].get_opts_with_func_arg(
+            lambda x: x in ["filename", "key-file"]
+        ),
+    }
     options["dirargs"] = sections["options"].get_opts_with_func_arg(
         lambda x: x in ["directory", "cache-dir"])
     opts_which_have_arg = sections["options"].get_opts_with_func_arg(
@@ -374,7 +360,7 @@ def check_options_in_file(options, filename):
     err = 0
     for opt in options["longargs"] + options["shortargs"]:
         if opt not in data:
-            print("Missing option: %s" % opt)
+            print(f"Missing option: {opt}")
             err += 1
 
     # Bail if anything is missing.

@@ -95,7 +95,7 @@ def add_arg(parser_obj, parser_name, optarg):
     if optarg.opt == "-h":
         return ""
 
-    spaces = " " * len("%s.add_argument(" % parser_name)
+    spaces = " " * len(f"{parser_name}.add_argument(")
     text = ""
     if optarg.arg:
         argtype = get_argtype(optarg.arg)
@@ -119,18 +119,13 @@ def is_mode_global(mode):
     if mode == "":
         return True
     modestr = mode[0]
-    if modestr == "(all modes)" or modestr.startswith("(use with"):
-        return True
-    return False
+    return bool(modestr == "(all modes)" or modestr.startswith("(use with"))
 
 
 def add_global_options(parser_obj, parser_name, optlist):
     """ Add all global options to parser_obj. """
     relevant = optlist.get_optargs_with_func_modes(is_mode_global)
-    text = ""
-    for optarg in relevant:
-        text += add_arg(parser_obj, parser_name, optarg)
-    return text
+    return "".join(add_arg(parser_obj, parser_name, optarg) for optarg in relevant)
 
 
 def generate(options, optlist, descs):
@@ -145,11 +140,7 @@ def generate(options, optlist, descs):
     text += add_global_options(parser, "parser", optlist)
 
     for mode in sorted(options["modes"]):
-        if len(mode) == 1:
-            modestr = "mode-%s" % mode
-        else:
-            modestr = "mode--%s" % mode
-
+        modestr = f"mode-{mode}" if len(mode) == 1 else f"mode--{mode}"
         desc = descs.get(modestr)
         spaces = " " * len("subparser = subparsers.add_parser(")
         text += _PY_SUBPARSER.format(mode=modestr, spaces=spaces, desc=desc)
