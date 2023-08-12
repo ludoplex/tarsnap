@@ -13,14 +13,10 @@ def get_included_filename(line):
         Args:
             line (string): a line of a .h or .c file."""
     if line.startswith("#include"):
-        included = re.findall('"[^"]*"', line)
-        if included:
-            included_filename = included[0][1:-1]
-            return included_filename
-        included = re.findall('<[^>]*>', line)
-        if included:
-            included_filename = included[0][1:-1]
-            return included_filename
+        if included := re.findall('"[^"]*"', line):
+            return included[0][1:-1]
+        if included := re.findall('<[^>]*>', line):
+            return included[0][1:-1]
     return None
 
 
@@ -37,9 +33,7 @@ def is_block_correct_order(values_orig):
     # if it is first in the list
     if values[0] == "sys/types.h":
         values = values[1:]
-    if values != sorted(values):
-        return False
-    return True
+    return values == sorted(values)
 
 
 def handle_file(filename):
@@ -51,19 +45,15 @@ def handle_file(filename):
     include_block = []
     with open(filename, encoding="utf-8") as filep:
         for i, line in enumerate(filep):
-            # find a set of #include lines (with no separation)
-            included_filename = get_included_filename(line)
-            if included_filename:
+            if included_filename := get_included_filename(line):
                 include_block.append(included_filename)
-            else:
-                # check that block was alphabetical
-                if len(include_block) > 0:
-                    if not is_block_correct_order(include_block):
-                        print("Non-alphabetical include block")
-                        print("\t%s" % filename)
-                        print("\tstarts line %i" % i)
-                        print("\t%s" % include_block)
-                    include_block = []
+            elif len(include_block) > 0:
+                if not is_block_correct_order(include_block):
+                    print("Non-alphabetical include block")
+                    print("\t%s" % filename)
+                    print("\tstarts line %i" % i)
+                    print("\t%s" % include_block)
+                include_block = []
 
 
 def main(filenames):

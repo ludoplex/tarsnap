@@ -34,9 +34,7 @@ def _wrap(text, width, initial_indent, subsequent_indent, separator):
 
     # Undo special workarounds.
     text_wrapped_sep_tabs = text_wrapped_sep.replace("tttttttt", "\t")
-    text_wrapped_sep_tabs_spaces = text_wrapped_sep_tabs.replace("~", " ")
-
-    return text_wrapped_sep_tabs_spaces
+    return text_wrapped_sep_tabs.replace("~", " ")
 
 
 def _bash_opts_multiline(bash_name, sep, options):
@@ -53,7 +51,7 @@ def _bash_opts_multiline(bash_name, sep, options):
 
     # Wrap text.
     width = 72
-    options_string_unwrapped = "%s" % (" ".join(options))
+    options_string_unwrapped = f'{" ".join(options)}'
     options_string = _wrap(options_string_unwrapped, width,
                            init_ind, subs_ind, sep)
 
@@ -64,7 +62,7 @@ def _bash_opts_multiline(bash_name, sep, options):
         # Remove the final 'sep',
         options_string = options_string[:-2]
     else:
-        options_string = "\n".join(["%s%s" % (line, sep) for line in lines])
+        options_string = "\n".join([f"{line}{sep}" for line in lines])
         # Remove the final 'sep'.
         options_string = options_string[:-1]
 

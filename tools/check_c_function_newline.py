@@ -23,9 +23,9 @@ def handle_file(filename):
                     print("\tline %i" % i)
                     print(func_text)
                 func_text = ""
-            if line[0] == "\t" or line[0] == " " or line[0] == "_":
+            if line[0] in ["\t", " ", "_"]:
                 continue
-            if line[0] == "#" or line[0:2] == "/*" or line[0:3] == " */":
+            if line[0] == "#" or line[:2] == "/*" or line[:3] == " */":
                 func_text = ""
                 continue
             if ";" in line:
